@@ -5,11 +5,12 @@ namespace SantaCopaRestApp.Model
     public class Classificacao
     {
         public int Pontos { get; set; }
+        public int Jogos { get; set; }
         public int Vitorias { get; set; }
         public int Empates { get; set; }
         public int GolsPro { get; set; }
         public int GolsContra { get; set; }
-        public int Saldo { get; set; }
+        public int Saldo { get; set; }        
         public string JogadorNome { get; set; }
         public int TorneioID { get; set; }
         public int JogadorID { get; set; }
@@ -17,69 +18,98 @@ namespace SantaCopaRestApp.Model
 
         public void AtualizarClassificacao(Partida partida)
         {
+            
+
+            if (partida.JogadorCasaGols > partida.JogadorVisitanteGols)
+            {
+                AplicarResultadosVencedor(partida, partida.JogadorCasa);
+                AplicarResultadosPerdedor(partida, partida.JogadorVisitante);
+            }                    
+
+            if (partida.JogadorCasaGols < partida.JogadorVisitanteGols)
+            {
+                AplicarResultadosVencedor(partida, partida.JogadorVisitante);
+                AplicarResultadosPerdedor(partida, partida.JogadorCasa);
+            }                    
+
+            if (partida.JogadorCasaGols == partida.JogadorVisitanteGols)
+                AplicarResultadosEmpate(partida);  
+            
+        }
+
+        public void AplicarResultadosVencedor(Partida partida, string jogador)
+        {
+            Classificacao classificacao = new Classificacao();
+            var classificado = classificacao.ConsultarClassificacao(jogador);
+            //classificacao.GolsPro =+ parti 
 
             using (SqlConnection connection = new SqlConnection(connectionString))
             {
                 connection.Open();
-
-                // Verificar o vencedor da partida
-
-                if (partida.JogadorCasaGols > partida.JogadorVisitanteGols)
-                {                    
-
-                    string query = $@"UPDATE Classificacao
+                string query = $@"UPDATE Classificacao
                                  SET Pontos = Pontos + 3,
                                      Vitorias = Vitorias + 1,
                                      GolsPro = GolsPro + @GolsPro,
                                      GolsContra = GolsContra + @GolsContra,
-                                     Saldo = Saldo + @Saldo
-                                 WHERE TorneioID = @TorneioID AND JogadorNome = '{partida.JogadorCasa}'";
+                                     Saldo = Saldo + @Saldo,
+                                    Jogos = Jogos + 1
+                                 WHERE TorneioID = @TorneioID AND JogadorNome = '{jogador}'";
 
-                    SqlCommand command = new SqlCommand(query, connection);
-                    command.Parameters.AddWithValue("@GolsPro", partida.JogadorCasaGols);
-                    command.Parameters.AddWithValue("@GolsContra", partida.JogadorVisitanteGols);
-                    command.Parameters.AddWithValue("@Saldo", partida.JogadorCasaGols - partida.JogadorVisitanteGols);
-                    command.Parameters.AddWithValue("@TorneioID", 1);
+                SqlCommand command = new SqlCommand(query, connection);
+                command.Parameters.AddWithValue("@GolsPro", partida.JogadorCasaGols);
+                command.Parameters.AddWithValue("@GolsContra", partida.JogadorVisitanteGols);
+                command.Parameters.AddWithValue("@Saldo", partida.JogadorCasaGols - partida.JogadorVisitanteGols);
+                command.Parameters.AddWithValue("@TorneioID", 1);
 
+                command.ExecuteNonQuery();
+            }
+        }
 
-                    command.ExecuteNonQuery();
+        public void AplicarResultadosPerdedor(Partida partida, string jogador)
+        {
+            using (SqlConnection connection = new SqlConnection(connectionString))
+            {
+                connection.Open();
+                string query = $@"UPDATE Classificacao
+                                 SET Derrotas = Derrotas + 1,
+                                     GolsPro = GolsPro + @GolsContra,
+                                     GolsContra = GolsContra + @GolsPro,
+                                     Saldo = Saldo - @Saldo,
+                                    Jogos = Jogos + 1
+                                 WHERE TorneioID = @TorneioID AND JogadorNome = '{jogador}'";
 
-                }
-                else
-                {
-                    string query = $@"UPDATE Classificacao
-                                 SET Pontos = Pontos + 3,
-                                     Vitorias = Vitorias + 1,
-                                     GolsPro = GolsPro + @GolsPro,
-                                     GolsContra = GolsContra + @GolsContra,
-                                     Saldo = Saldo + @Saldo
-                                 WHERE TorneioID = @TorneioID AND JogadorNome = '{partida.JogadorVisitante}'";
+                SqlCommand command = new SqlCommand(query, connection);
+                command.Parameters.AddWithValue("@GolsPro", partida.JogadorCasaGols);
+                command.Parameters.AddWithValue("@GolsContra", partida.JogadorVisitanteGols);
+                command.Parameters.AddWithValue("@Saldo", partida.JogadorCasaGols - partida.JogadorVisitanteGols);
+                command.Parameters.AddWithValue("@TorneioID", 1);
 
-                    SqlCommand command = new SqlCommand(query, connection);
-                    command.Parameters.AddWithValue("@GolsPro", partida.JogadorCasaGols);
-                    command.Parameters.AddWithValue("@GolsContra", partida.JogadorVisitanteGols);
-                    command.Parameters.AddWithValue("@Saldo", partida.JogadorCasaGols - partida.JogadorVisitanteGols);
-                    command.Parameters.AddWithValue("@TorneioID", 1);
-                }
+                command.ExecuteNonQuery();
+            }
+        }
 
-                if (partida.JogadorCasaGols == partida.JogadorVisitanteGols)
-                {
-                    string query = $@"UPDATE Classificacao
+        public void AplicarResultadosEmpate(Partida partida)
+        {
+            //SELECT* FROM Classificacao WHERE JogadorNome = ''
+            using (SqlConnection connection = new SqlConnection(connectionString))
+            {
+                connection.Open();
+                string query = $@"UPDATE Classificacao
                                  SET Empates = Empates + 1,
                                      GolsPro = GolsPro + @GolsPro,
                                      GolsContra = GolsContra + @GolsContra,
                                      Saldo = Saldo + @Saldo,
-                                        Pontos = Pontos + 1
-                                 WHERE TorneioID = @TorneioID AND JogadorNome IN ('{partida.JogadorCasa}','{partida.JogadorVisitante}')";
+                                    Pontos = Pontos + 1,
+                                    Jogos = Jogos + 1
+                                 WHERE TorneioID = @TorneioID AND JogadorNome IN ('{partida.JogadorCasa}', '{partida.JogadorVisitante}')";
 
-                    SqlCommand command = new SqlCommand(query, connection);
-                    command.Parameters.AddWithValue("@GolsPro", partida.JogadorCasaGols);
-                    command.Parameters.AddWithValue("@GolsContra", partida.JogadorVisitanteGols);
-                    command.Parameters.AddWithValue("@Saldo", partida.JogadorCasaGols - partida.JogadorVisitanteGols);
-                    command.Parameters.AddWithValue("@TorneioID", 1);
+                SqlCommand command = new SqlCommand(query, connection);
+                command.Parameters.AddWithValue("@GolsPro", partida.JogadorCasaGols);
+                command.Parameters.AddWithValue("@GolsContra", partida.JogadorVisitanteGols);
+                command.Parameters.AddWithValue("@Saldo", partida.JogadorCasaGols - partida.JogadorVisitanteGols);
+                command.Parameters.AddWithValue("@TorneioID", 1);
 
-                    command.ExecuteNonQuery();
-                }
+                command.ExecuteNonQuery();
             }
         }
 
@@ -103,12 +133,14 @@ namespace SantaCopaRestApp.Model
                     if (count == 0)
                     {
                         // Inserir novo registro na tabela de classificação para o jogador
-                        string queryInserir = @"INSERT INTO Classificacao (Pontos, Vitorias, Empates, GolsPro, GolsContra, Saldo, JogadorNome, TorneioID, JogadorID)
-                                            VALUES (@Pontos, @Vitorias, @Empates, @GolsPro, @GolsContra, @Saldo, @JogadorNome, @TorneioID, @JogadorID)";
+                        string queryInserir = @"INSERT INTO Classificacao (Pontos, Jogos,Vitorias, Empates, Derrotas, GolsPro, GolsContra, Saldo, JogadorNome, TorneioID, JogadorID)
+                                            VALUES (@Pontos, @Jogos, @Vitorias, @Empates, @Derrotas, @GolsPro, @GolsContra, @Saldo, @JogadorNome, @TorneioID, @JogadorID)";
                         SqlCommand commandInserir = new SqlCommand(queryInserir, connection);
                         commandInserir.Parameters.AddWithValue("@Pontos", 0);
+                        commandInserir.Parameters.AddWithValue("@Jogos", 0);
                         commandInserir.Parameters.AddWithValue("@Vitorias", 0);
                         commandInserir.Parameters.AddWithValue("@Empates", 0);
+                        commandInserir.Parameters.AddWithValue("@Derrotas", 0);
                         commandInserir.Parameters.AddWithValue("@GolsPro", 0);
                         commandInserir.Parameters.AddWithValue("@GolsContra", 0);
                         commandInserir.Parameters.AddWithValue("@Saldo", 0);
@@ -121,7 +153,48 @@ namespace SantaCopaRestApp.Model
                 }
             }
         }
-            
-        
+
+        public List<Classificacao> ConsultarClassificacao(string jogadorID)
+        {
+            List<Classificacao> classificacaoList = new List<Classificacao>();
+
+            using (SqlConnection connection = new SqlConnection(connectionString))
+            {
+                connection.Open();
+
+                string query = @"SELECT Pontos, Vitorias, Empates, GolsPro, GolsContra, Saldo, JogadorNome, TorneioID, JogadorID
+                             FROM Classificacao
+                             WHERE TorneioID = 1 AND JogadorID = @JogadorID
+                             ORDER BY Pontos DESC";
+
+                SqlCommand command = new SqlCommand(query, connection);
+                command.Parameters.AddWithValue("@JogadorID", JogadorID);
+
+                SqlDataReader reader = command.ExecuteReader();
+
+                while (reader.Read())
+                {
+                    Classificacao classificacao = new Classificacao();
+
+                    classificacao.Pontos = reader.GetInt32(0);
+                    classificacao.Jogos = reader.GetInt32(1);
+                    classificacao.Vitorias = reader.GetInt32(2);
+                    classificacao.Empates = reader.GetInt32(3);
+                    classificacao.GolsPro = reader.GetInt32(4);
+                    classificacao.GolsContra = reader.GetInt32(5);
+                    classificacao.Saldo = reader.GetInt32(6);
+                    classificacao.JogadorNome = reader.GetString(7);
+                    classificacao.TorneioID = reader.GetInt32(8);
+                    classificacao.JogadorID = reader.GetInt32(9);
+
+                    classificacaoList.Add(classificacao);
+                }
+
+                reader.Close();
+            }
+
+            return classificacaoList;
+        }
+
     }
 }

@@ -17,6 +17,8 @@ namespace SantaCopaRestApp.Model
         public string? JogadorVisitante { get; set; }
         public string? EquipeVisitante { get; set; }
         public int JogadorVisitanteGols { get; set; }
+       
+        public string? PartidaRealizada { get; set; }
 
         public int TorneioID { get; set; }
 
@@ -70,12 +72,55 @@ namespace SantaCopaRestApp.Model
             return partidas;
         }
 
+        public Partida SelecionarUltimaPartidaCriada()
+        {
+            List<Partida> partidas = new();
+            string query = "SELECT TOP 1 * FROM Partida ORDER BY 1 DESC";
+
+
+            using (SqlConnection connection = new(connectionString))
+            {
+                SqlCommand command = new(query, connection);
+
+                connection.Open();
+                SqlDataReader reader = command.ExecuteReader();
+
+                while (reader.Read())
+                {
+                    Partida partida = new()
+                    {
+                        PartidaID = (int)reader["PartidaID"],
+                        Rodada = (string)reader["Rodada"],
+                        Local = (string)reader["Local"],
+                        NivelEstrelas = (string)reader["NivelEstrelas"],
+
+                        JogadorCasaGols = (int)reader["JogadorCasaGols"],
+                        JogadorCasa = (string)reader["JogadorCasa"],
+                        EquipeCasa = (string)reader["EquipeCasa"],
+
+                        JogadorVisitanteGols = (int)reader["JogadorVisitanteGols"],
+                        JogadorVisitante = (string)reader["JogadorVisitante"],
+                        EquipeVisitante = (string)reader["EquipeVisitante"],
+                        PartidaRealizada = (string)reader["PartidaRealizada"],
+
+                        TorneioID = (int)reader["TorneioID"],
+                    };
+
+                    partidas.Add(partida);
+                }
+
+                reader.Close();
+            }
+
+            return partidas.FirstOrDefault();
+        }
+
         public void CriarPartida(Partida partida)
         {
             using (SqlConnection connection = new SqlConnection(connectionString))
             {
-                string query = @"INSERT INTO Partida (Rodada, NivelEstrelas, Local, JogadorCasa, EquipeCasa, JogadorCasaGols, JogadorVisitante, EquipeVisitante, JogadorVisitanteGols, TorneioID)
-                             VALUES (@Rodada, @NivelEstrelas, @Local, @JogadorCasa, @EquipeCasa, @JogadorCasaGols, @JogadorVisitante, @EquipeVisitante, @JogadorVisitanteGols, @TorneioID)";
+                string query = @"INSERT INTO Partida (Rodada, NivelEstrelas, Local, JogadorCasa, EquipeCasa, JogadorCasaGols, JogadorVisitante, EquipeVisitante, JogadorVisitanteGols, PartidaRealizada, TorneioID)
+                             VALUES (@Rodada, @NivelEstrelas, @Local, @JogadorCasa, @EquipeCasa, @JogadorCasaGols, @JogadorVisitante, @EquipeVisitante, @JogadorVisitanteGols, @PartidaRealizada, @TorneioID)";
 
                 SqlCommand command = new SqlCommand(query, connection);
                 command.Parameters.AddWithValue("@Rodada", partida.Rodada);
@@ -87,6 +132,7 @@ namespace SantaCopaRestApp.Model
                 command.Parameters.AddWithValue("@JogadorVisitante", partida.JogadorVisitante);
                 command.Parameters.AddWithValue("@EquipeVisitante", partida.EquipeVisitante);
                 command.Parameters.AddWithValue("@JogadorVisitanteGols", partida.JogadorVisitanteGols);
+                command.Parameters.AddWithValue("@PartidaRealizada", "Não");
                 command.Parameters.AddWithValue("@TorneioID", 1);
 
                 connection.Open();
@@ -149,6 +195,9 @@ namespace SantaCopaRestApp.Model
                     query += "JogadorVisitanteGols = @JogadorVisitanteGols, ";
                     command.Parameters.AddWithValue("@JogadorVisitanteGols", partida.JogadorVisitanteGols);
                 }
+
+                query += "PartidaRealizada = @PartidaRealizada, ";
+                command.Parameters.AddWithValue("@PartidaRealizada", partida.PartidaRealizada);
 
                 query = query.TrimEnd(',', ' ');
                 query += " WHERE PartidaID = @PartidaID";

@@ -46,9 +46,12 @@ namespace SantaCopaRestApp.Controllers
 
         // POST api/<TorneioController>/5
         [HttpPost("mata")]
-        public void Torneio([FromBody] Mata mata)
+        public Partida Torneio([FromBody] Mata mata)
         {  
             gerenciador.SortearPartidas_Mata($"Rodada {mata.Rodada}", mata.JogadorCasa, mata.JogadorVisitante);
+
+            Partida partida = new Partida();
+            return partida.SelecionarUltimaPartidaCriada();
         }
 
         // POST api/<TorneioController>
