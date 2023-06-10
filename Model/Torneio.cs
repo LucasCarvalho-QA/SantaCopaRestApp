@@ -73,7 +73,10 @@ namespace SantaCopaRestApp.Model
             Gerenciador gerenciador = new Gerenciador();
             gerenciador.SortearPartidas("Rodada 1");
             gerenciador.SortearPartidas("Rodada 2");
-            gerenciador.SortearPartidas("Rodada 3");            
+            gerenciador.SortearPartidas("Rodada 3");
+
+            Classificacao classificacao = new Classificacao();
+            classificacao.PopularClassificacao();
         }
     }
 }

@@ -165,8 +165,10 @@ namespace SantaCopaRestApp
 
             Equipe equipe = GetEquipeAleatoria(nivelEstrelas);
 
-            if (jogadorEquipe.VerificarTimesCriadosNaRodada(rodada, equipe.EquipeID.ToString()).Count > 1)
-                SortearJogadorEquipe(nivelEstrelas, jogadores, rodada);
+            //Thread.Sleep(500);
+
+            while (jogadorEquipe.VerificarTimesCriadosNaRodada(rodada, equipe.EquipeID.ToString()).Count > 0)
+                equipe = GetEquipeAleatoria(nivelEstrelas);
 
             Jogador jogador = jogadores[random.Next(jogadores.Count)];
             
@@ -179,8 +181,8 @@ namespace SantaCopaRestApp
             };
 
             if (jogadorEquipe.SelecionarJogadorEquipe(jogador.JogadorID.ToString(), equipe.EquipeID.ToString()).Count > 0)
-                SortearJogadorEquipe(nivelEstrelas, jogadores, rodada);
-            
+                equipe = GetEquipeAleatoria(nivelEstrelas);
+
             jogadorEquipe.CriarJogadorEquipe(jogadorEquipeLocal);
             jogadorEquipeLocal.JogadorEquipeID = jogadorEquipe.RetornarUltimoItemCriado().JogadorEquipeID;
 

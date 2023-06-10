@@ -36,7 +36,7 @@ namespace SantaCopaRestApp.Controllers
         public List<Partida> Put([FromBody] Partida partida)
         {            
             partida.AlterarPartida(partida);
-            classificacao.AtualizarClassificacao();
+            //classificacao.AtualizarClassificacao(partida);
             return partida.SelecionarPartidas(null, partida.PartidaID.ToString());
         }
 

@@ -32,7 +32,7 @@ namespace SantaCopaRestApp.Model
                 query += $" WHERE Rodada = 'Rodada {rodadaId}'";
 
             if (rodadaId == null && partidaId != null)
-                query += $" WHERE Partida = '{partidaId}'";
+                query += $" WHERE PartidaID = '{partidaId}'";
 
             using (SqlConnection connection = new(connectionString))
             {
