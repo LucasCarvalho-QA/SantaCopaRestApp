@@ -3,7 +3,7 @@
 namespace SantaCopaRestApp.Model
 {
     public class Classificacao
-    {        
+    {
         public int Pontos { get; set; }
         public int Vitorias { get; set; }
         public int Empates { get; set; }
@@ -17,35 +17,35 @@ namespace SantaCopaRestApp.Model
 
         public void AtualizarClassificacao(Partida partida)
         {
-            string jogadorVencedor = null;
-            string jogadorPerdedor = null;
+
             using (SqlConnection connection = new SqlConnection(connectionString))
             {
                 connection.Open();
 
                 // Verificar o vencedor da partida
-                string vencedor = "";
-                if (partida.JogadorCasaGols > partida.JogadorVisitanteGols)
-                {
-                    vencedor = partida.JogadorCasa;
-                    jogadorVencedor = partida.JogadorCasa;
-                    jogadorPerdedor = partida.JogadorVisitante;
 
-                }                    
-                else if (partida.JogadorCasaGols < partida.JogadorVisitanteGols)
-                {
-                    vencedor = partida.JogadorVisitante;
-                    jogadorVencedor = partida.JogadorVisitante;
-                    jogadorPerdedor = partida.JogadorCasa;
+                if (partida.JogadorCasaGols > partida.JogadorVisitanteGols)
+                {                    
+
+                    string query = $@"UPDATE Classificacao
+                                 SET Pontos = Pontos + 3,
+                                     Vitorias = Vitorias + 1,
+                                     GolsPro = GolsPro + @GolsPro,
+                                     GolsContra = GolsContra + @GolsContra,
+                                     Saldo = Saldo + @Saldo
+                                 WHERE TorneioID = @TorneioID AND JogadorNome = '{partida.JogadorCasa}'";
+
+                    SqlCommand command = new SqlCommand(query, connection);
+                    command.Parameters.AddWithValue("@GolsPro", partida.JogadorCasaGols);
+                    command.Parameters.AddWithValue("@GolsContra", partida.JogadorVisitanteGols);
+                    command.Parameters.AddWithValue("@Saldo", partida.JogadorCasaGols - partida.JogadorVisitanteGols);
+                    command.Parameters.AddWithValue("@TorneioID", 1);
+
+
+                    command.ExecuteNonQuery();
+
                 }
                 else
-                {
-                    vencedor = "empate";
-                }
-                    
-
-                // Atualizar tabela de classificação para o vencedor
-                if (!string.IsNullOrEmpty(vencedor))
                 {
                     string query = $@"UPDATE Classificacao
                                  SET Pontos = Pontos + 3,
@@ -53,43 +53,23 @@ namespace SantaCopaRestApp.Model
                                      GolsPro = GolsPro + @GolsPro,
                                      GolsContra = GolsContra + @GolsContra,
                                      Saldo = Saldo + @Saldo
-                                 WHERE TorneioID = @TorneioID AND JogadorNome = '{jogadorVencedor}'";
+                                 WHERE TorneioID = @TorneioID AND JogadorNome = '{partida.JogadorVisitante}'";
 
                     SqlCommand command = new SqlCommand(query, connection);
                     command.Parameters.AddWithValue("@GolsPro", partida.JogadorCasaGols);
                     command.Parameters.AddWithValue("@GolsContra", partida.JogadorVisitanteGols);
                     command.Parameters.AddWithValue("@Saldo", partida.JogadorCasaGols - partida.JogadorVisitanteGols);
                     command.Parameters.AddWithValue("@TorneioID", 1);
-                    
-
-                    command.ExecuteNonQuery();
                 }
 
-                // Atualizar tabela de classificação para o perdedor
-                if (string.IsNullOrEmpty(vencedor))
-                {
-                    string query = $@"UPDATE Classificacao
-                                 SET GolsPro = GolsPro + @GolsPro,
-                                     GolsContra = GolsContra + @GolsContra,
-                                     Saldo = Saldo + @Saldo
-                                 WHERE TorneioID = @TorneioID AND JogadorNome = '{jogadorVencedor}'";
-
-                    SqlCommand command = new SqlCommand(query, connection);
-                    command.Parameters.AddWithValue("@GolsPro", partida.JogadorCasaGols);
-                    command.Parameters.AddWithValue("@GolsContra", partida.JogadorVisitanteGols);
-                    command.Parameters.AddWithValue("@Saldo", partida.JogadorCasaGols - partida.JogadorVisitanteGols);
-                    command.Parameters.AddWithValue("@TorneioID", 1);                    
-
-                    command.ExecuteNonQuery();
-                }
-
-                if (vencedor == "empate")
+                if (partida.JogadorCasaGols == partida.JogadorVisitanteGols)
                 {
                     string query = $@"UPDATE Classificacao
                                  SET Empates = Empates + 1,
                                      GolsPro = GolsPro + @GolsPro,
                                      GolsContra = GolsContra + @GolsContra,
-                                     Saldo = Saldo + @Saldo
+                                     Saldo = Saldo + @Saldo,
+                                        Pontos = Pontos + 1
                                  WHERE TorneioID = @TorneioID AND JogadorNome IN ('{partida.JogadorCasa}','{partida.JogadorVisitante}')";
 
                     SqlCommand command = new SqlCommand(query, connection);
@@ -141,5 +121,7 @@ namespace SantaCopaRestApp.Model
                 }
             }
         }
+            
+        
     }
 }

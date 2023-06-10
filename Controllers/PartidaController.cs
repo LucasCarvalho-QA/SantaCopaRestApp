@@ -33,10 +33,15 @@ namespace SantaCopaRestApp.Controllers
 
         // PUT api/<PartidaController>/5
         [HttpPut("alterar")]
-        public List<Partida> Put([FromBody] Partida partida)
+        public List<Partida> Put([FromBody] Partida partidaJogada)
         {            
-            partida.AlterarPartida(partida);
-            //classificacao.AtualizarClassificacao(partida);
+            partida.AlterarPartida(partidaJogada);
+            var partidaEditada = partida.SelecionarPartidas(null, partidaJogada.PartidaID.ToString());
+            partidaEditada[0].JogadorCasaGols = partidaJogada.JogadorCasaGols;
+            partidaEditada[0].JogadorVisitanteGols = partidaJogada.JogadorVisitanteGols;
+
+            classificacao.AtualizarClassificacao(partidaEditada[0]);
+
             return partida.SelecionarPartidas(null, partida.PartidaID.ToString());
         }
 
